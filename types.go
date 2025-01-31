@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"regexp"
+	"time"
 )
 
 var (
@@ -21,23 +22,25 @@ var (
 )
 
 func (i Item) IsValid() error {
+	var err error
+
 	if i.ShortDescription == "" {
-		return errors.New("Item short description cannot be empty")
+		err = errors.Join(err, errors.New("item: short description cannot be empty"))
 	}
 
 	if i.Price == "" {
-		return errors.New("Item price cannot be empty")
+		err = errors.Join(err, errors.New("item: price cannot be empty"))
 	}
 
 	if !reItemShortDescription.MatchString(i.ShortDescription) {
-		return errors.New("Item short description must be alphanumeric")
+		err = errors.Join(err, errors.New("item: short description must be alphanumeric"))
 	}
 
 	if !reItemPrice.MatchString(i.Price) {
-		return errors.New("Item price must be in the format of 0.00")
+		err = errors.Join(err, errors.New("item: price must be in the format of 0.00"))
 	}
 
-	return nil
+	return err
 }
 
 type Receipt struct {
@@ -54,24 +57,46 @@ var (
 )
 
 func (r Receipt) IsValid() error {
+	var err error
+
 	if r.Retailer == "" {
-		return errors.New("Receipt retailer cannot be empty")
+		err = errors.Join(err, errors.New("receipt: retailer cannot be empty"))
+	}
+
+	if !reReceiptRetailer.MatchString(r.Retailer) {
+		err = errors.Join(err, errors.New("receipt: retailer must be alphanumeric"))
 	}
 
 	if r.PurchaseDate == "" {
-		return errors.New("Receipt purchase date cannot be empty")
+		err = errors.Join(err, errors.New("receipt: purchase date cannot be empty"))
+	}
+
+	_, terr := time.Parse("2006-01-02", r.PurchaseDate)
+	if terr != nil {
+		err = errors.Join(err, errors.New("receipt: purchase date must be in the format of YYYY-MM-DD"))
 	}
 
 	if r.PurchaseTime == "" {
-		return errors.New("Receipt purchase time cannot be empty")
+		err = errors.Join(err, errors.New("receipt: purchase time cannot be empty"))
 	}
 
 	if len(r.Items) == 0 {
-		return errors.New("Receipt items cannot be empty")
+		err = errors.Join(err, errors.New("receipt: items cannot be empty"))
 	}
 
 	if r.Total == "" {
-		return errors.New("Receipt total cannot be empty")
+		err = errors.Join(err, errors.New("receipt: total cannot be empty"))
 	}
-	return nil
+
+	if !reReceiptTotal.MatchString(r.Total) {
+		err = errors.Join(err, errors.New("receipt: total must be in the format of 0.00"))
+	}
+
+	for _, item := range r.Items {
+		if ierr := item.IsValid(); err != nil {
+			err = errors.Join(err, ierr)
+		}
+	}
+
+	return err
 }
