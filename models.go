@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 )
@@ -71,13 +72,18 @@ func (r Receipt) IsValid() error {
 		err = errors.Join(err, errors.New("receipt: purchase date cannot be empty"))
 	}
 
-	_, terr := time.Parse("2006-01-02", r.PurchaseDate)
-	if terr != nil {
-		err = errors.Join(err, errors.New("receipt: purchase date must be in the format of YYYY-MM-DD"))
+	_, derr := time.Parse("2006-01-02", r.PurchaseDate)
+	if derr != nil {
+		err = errors.Join(err, fmt.Errorf("receipt: purchase date must be in the format of YYYY-MM-DD - %w", derr))
 	}
 
 	if r.PurchaseTime == "" {
 		err = errors.Join(err, errors.New("receipt: purchase time cannot be empty"))
+	}
+
+	_, terr := time.Parse("15:04", r.PurchaseTime)
+	if terr != nil {
+		err = errors.Join(err, fmt.Errorf("receipt: purchase time must be in the format of HH:MM - %w", terr))
 	}
 
 	if len(r.Items) == 0 {
