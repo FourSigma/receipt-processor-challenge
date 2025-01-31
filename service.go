@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type RecepitStore struct {
@@ -30,6 +33,12 @@ func (s *RecepitStore) GetReceipt(id string) (Receipt, error) {
 	}
 
 	return r, nil
+}
+
+func NewService() *Service {
+	return &Service{
+		store: &RecepitStore{store: map[string]Receipt{}},
+	}
 }
 
 type Service struct {
@@ -117,8 +126,39 @@ func (r ReqProcessReceipt) IsValid() error {
 }
 
 // Converts validated request to a Receipt struct
-func ConvertReqToReceiptTwo(r ReqProcessReceipt) ReceiptTwo {
-	time.RFC1123
+func ConvertReqToReceiptTwo(req ReqProcessReceipt) (Receipt, error) {
+	receipt := Receipt{
+		Id:       uuid.NewString(),
+		Retailer: req.Retailer,
+		Points:   0,
+	}
+
+	total, err := strconv.ParseInt(req.Total, 10, 64)
+	if err != nil {
+		return Receipt{}, fmt.Errorf("error parsing total: %w", err)
+	}
+
+	receipt.TotalCents = total * 100
+
+	const timeFormat = "2006-01-02 15:04"
+	receipt.PurchasedAt, err = time.Parse(timeFormat, req.PurchaseDate+" "+req.PurchaseTime)
+	if err != nil {
+		return Receipt{}, fmt.Errorf("error parsing purchase date and time: %w", err)
+	}
+
+	for _, item := range req.Items {
+		price, err := strconv.ParseInt(item.Price, 10, 64)
+		if err != nil {
+			return Receipt{}, fmt.Errorf("error parsing item price: %w", err)
+		}
+
+		receipt.Items = append(receipt.Items, Item{
+			ShortDescription: item.ShortDescription,
+			PriceCents:       price * 100,
+		})
+	}
+
+	return receipt, nil
 }
 
 type RespProcessReceipt struct {
@@ -130,6 +170,23 @@ func (s Service) ProcessReceipt(req ReqProcessReceipt) (*RespProcessReceipt, err
 		return nil, fmt.Errorf("error validating request: %w", err)
 	}
 
+	receipt, err := ConvertReqToReceiptTwo(req)
+	if err != nil {
+		return nil, fmt.Errorf("error converting request to receipt: %w", err)
+	}
+
+	rules := []RuleHandlerFn{
+		RuleAlphanumeric,
+		RuleRoundDollar,
+		RuleMultipleOfQuarter,
+		RuleItemPair,
+		RuleItemDescription,
+		RuleOddDay,
+		RuleTimeOfPurchase,
+	}
+
+	receipt.Points = CalculatePoints(receipt, rules...)
+
 	s.store.StoreReceipt(receipt.Id, receipt)
 
 	return &RespProcessReceipt{Id: receipt.Id}, nil
@@ -139,6 +196,10 @@ type ReqGetPoints struct {
 	Id string `json:"id"`
 }
 
+type RespGetPoints struct {
+	Points int64 `json:"points"`
+}
+
 func (r ReqGetPoints) IsValid() error {
 	if r.Id == "" {
 		return fmt.Errorf("id cannot be empty")
@@ -146,14 +207,19 @@ func (r ReqGetPoints) IsValid() error {
 	return nil
 }
 
-func (s Service) GetPoints(req ReqGetPoints) (int64, error) {
+func (s Service) GetPoints(req ReqGetPoints) (*RespGetPoints, error) {
 	if err := req.IsValid(); err != nil {
-		return 0, fmt.Errorf("error validating request: %w", err)
-	}
-	r, err := s.store.GetReceipt(req.Id)
-	if err != nil {
-		return 0, fmt.Errorf("error getting recepit: %w", err)
+		return nil, fmt.Errorf("error validating request: %w", err)
 	}
 
-	return r.Points, nil
+	r, err := s.store.GetReceipt(req.Id)
+	if err != nil {
+		return nil, fmt.Errorf("error getting recepit: %w", err)
+	}
+
+	resp := &RespGetPoints{
+		Points: r.Points,
+	}
+
+	return resp, nil
 }

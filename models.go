@@ -42,22 +42,21 @@ type Item struct {
 // 	return err
 // }
 
-type Receipt struct {
-	Id           string `json:"-"`
-	Retailer     string `json:"retailer"`
-	PurchaseDate string `json:"purchaseDate"`
-	PurchaseTime string `json:"purchaseTime"`
-	Items        []Item `json:"items"`
-	Total        string `json:"total"`
-	Points       int64  `json:"-"`
-}
+// type Receipt struct {
+// 	Id           string `json:"-"`
+// 	Retailer     string `json:"retailer"`
+// 	PurchaseDate string `json:"purchaseDate"`
+// 	PurchaseTime string `json:"purchaseTime"`
+// 	Items        []Item `json:"items"`
+// 	Total        string `json:"total"`
+// }
 
-type ReceiptTwo struct {
+type Receipt struct {
 	Id          string
 	Retailer    string
 	Items       []Item
 	PurchasedAt time.Time
-	Total       int64
+	TotalCents  int64
 	Points      int64
 }
 
