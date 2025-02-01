@@ -3,6 +3,7 @@ package main
 import (
 	"math"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -57,11 +58,13 @@ func RuleItemPair(r Receipt) int64 {
 // The result is the number of points earned.
 func RuleItemDescription(r Receipt) int64 {
 	var points int64
+
 	for _, item := range r.Items {
 		if len(strings.TrimSpace(item.ShortDescription))%3 == 0 {
 			points = points + int64(math.Ceil(item.Price*0.2))
 		}
 	}
+
 	return points
 }
 
@@ -75,7 +78,31 @@ func RuleOddDay(r Receipt) int64 {
 
 // 10 points if the time of purchase is after 2:00pm and before 4:00pm.
 func RuleTimeOfPurchase(r Receipt) int64 {
-	if r.PurchasedAt.Hour() > 14 && r.PurchasedAt.Hour() < 16 {
+	t := r.PurchasedAt
+
+	twoPM := time.Date(
+		t.Year(),
+		t.Month(),
+		t.Day(),
+		14, // hour (2 PM = 14:00)
+		0,
+		0,
+		0,
+		t.Location(),
+	)
+
+	fourPM := time.Date(
+		t.Year(),
+		t.Month(),
+		t.Day(),
+		16, // hour (4 PM = 16:00)
+		0,
+		0,
+		0,
+		t.Location(),
+	)
+
+	if t.After(twoPM) && t.Before(fourPM) {
 		return 10
 	}
 	return 0

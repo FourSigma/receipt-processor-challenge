@@ -63,62 +63,78 @@ var (
 	reReceiptItemPrice            = regexp.MustCompile("^\\d+\\.\\d{2}$")
 )
 
+var (
+	ErrRetailerEmpty               = errors.New("retailer cannot be empty")
+	ErrRetailerAlphanumeric        = errors.New("retailer must be alphanumeric")
+	ErrPurchaseDateEmpty           = errors.New("purchase date cannot be empty")
+	ErrPurchaseDateInvalid         = errors.New("purchase date must be in the format of YYYY-MM-DD")
+	ErrPurchaseTimeEmpty           = errors.New("purchase time cannot be empty")
+	ErrPurchaseTimeInvalid         = errors.New("purchase time must be in the format of HH:MM")
+	ErrItemsEmpty                  = errors.New("items cannot be empty")
+	ErrTotalEmpty                  = errors.New("total cannot be empty")
+	ErrTotalInvalid                = errors.New("total must be in the format of 0.00")
+	ErrItemShortDescriptionEmpty   = errors.New("item short description cannot be empty")
+	ErrItemShortDescriptionInvalid = errors.New("item short description must be alphanumeric")
+	ErrItemPriceEmpty              = errors.New("item price cannot be empty")
+	ErrItemPriceInvalid            = errors.New("item price must be in the format of 0.00")
+)
+
 func (r ReqProcessReceipt) IsValid() error {
 	var err error
 
 	if r.Retailer == "" {
-		err = errors.Join(err, errors.New("receipt: retailer cannot be empty"))
+		err = errors.Join(err, ErrRetailerEmpty)
 	}
 
 	if !reReceiptRetailer.MatchString(r.Retailer) {
-		err = errors.Join(err, errors.New("receipt: retailer must be alphanumeric"))
+		err = errors.Join(err, ErrRetailerAlphanumeric)
 	}
 
 	if r.PurchaseDate == "" {
-		err = errors.Join(err, errors.New("receipt: purchase date cannot be empty"))
+		err = errors.Join(err, ErrPurchaseDateEmpty)
 	}
 
 	_, derr := time.Parse(time.DateOnly, r.PurchaseDate)
 	if derr != nil {
-		err = errors.Join(err, fmt.Errorf("receipt: purchase date must be in the format of YYYY-MM-DD - %w", derr))
+		err = errors.Join(err, ErrPurchaseDateInvalid)
 	}
 
 	if r.PurchaseTime == "" {
-		err = errors.Join(err, errors.New("receipt: purchase time cannot be empty"))
+		err = errors.Join(err, ErrPurchaseTimeEmpty)
 	}
 
 	_, terr := time.Parse("15:04", r.PurchaseTime)
 	if terr != nil {
-		err = errors.Join(err, fmt.Errorf("receipt: purchase time must be in the format of HH:MM - %w", terr))
+		err = errors.Join(err, fmt.Errorf("%w: %w", ErrPurchaseTimeInvalid, terr))
 	}
 
 	if len(r.Items) == 0 {
-		err = errors.Join(err, errors.New("receipt: items cannot be empty"))
+		err = errors.Join(err, ErrItemsEmpty)
 	}
 
 	if r.Total == "" {
-		err = errors.Join(err, errors.New("receipt: total cannot be empty"))
+		err = errors.Join(err, ErrTotalEmpty)
 	}
 
 	if !reReceiptTotal.MatchString(r.Total) {
-		err = errors.Join(err, errors.New("receipt: total must be in the format of 0.00"))
+		err = errors.Join(err, ErrTotalInvalid)
 	}
 
 	for _, item := range r.Items {
 		if item.ShortDescription == "" {
-			err = errors.Join(err, errors.New("item: short description cannot be empty"))
+			err = errors.Join(err, ErrItemShortDescriptionEmpty)
 		}
 
 		if item.Price == "" {
-			err = errors.Join(err, errors.New("item: price cannot be empty"))
+			err = errors.Join(err, ErrItemPriceEmpty)
 		}
 
 		if !reReceiptItemShortDescription.MatchString(item.ShortDescription) {
-			err = errors.Join(err, errors.New("item: short description must be alphanumeric"))
+			err = errors.Join(err, ErrItemShortDescriptionInvalid)
 		}
 
 		if !reReceiptItemPrice.MatchString(item.Price) {
-			err = errors.Join(err, errors.New("item: price must be in the format of 0.00"))
+			err = errors.Join(err, ErrItemPriceInvalid)
 		}
 
 	}
@@ -167,7 +183,7 @@ type RespProcessReceipt struct {
 
 func (s Service) ProcessReceipt(req ReqProcessReceipt) (*RespProcessReceipt, error) {
 	if err := req.IsValid(); err != nil {
-		return nil, fmt.Errorf("error validating request: %w", err)
+		return nil, fmt.Errorf("invalid request - %w %w", ErrInvalidInput, err)
 	}
 
 	receipt, err := ConvertReqToReceiptTwo(req)
