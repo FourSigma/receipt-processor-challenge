@@ -57,10 +57,10 @@ type ReqProcessReceipt struct {
 }
 
 var (
-	reReceiptRetailer             = regexp.MustCompile(`^[\\w\\s\\-&]+$`)
-	reReceiptTotal                = regexp.MustCompile(`^\\d+\\.\\d{2}$`)
-	reReceiptItemShortDescription = regexp.MustCompile(`^[\\w\\s\\-]+$`)
-	reReceiptItemPrice            = regexp.MustCompile(`^\\d+\\.\\d{2}$`)
+	reReceiptRetailer             = regexp.MustCompile("^[\\w\\s\\-&]+$")
+	reReceiptTotal                = regexp.MustCompile("^\\d+\\.\\d{2}$")
+	reReceiptItemShortDescription = regexp.MustCompile("^[\\w\\s\\-]+$")
+	reReceiptItemPrice            = regexp.MustCompile("^\\d+\\.\\d{2}$")
 )
 
 func (r ReqProcessReceipt) IsValid() error {
@@ -133,12 +133,12 @@ func ConvertReqToReceiptTwo(req ReqProcessReceipt) (Receipt, error) {
 		Points:   0,
 	}
 
-	total, err := strconv.ParseInt(req.Total, 10, 64)
+	total, err := strconv.ParseFloat(req.Total, 64)
 	if err != nil {
 		return Receipt{}, fmt.Errorf("error parsing total: %w", err)
 	}
 
-	receipt.TotalCents = total * 100
+	receipt.Total = total
 
 	const timeFormat = "2006-01-02 15:04"
 	receipt.PurchasedAt, err = time.Parse(timeFormat, req.PurchaseDate+" "+req.PurchaseTime)
@@ -147,14 +147,14 @@ func ConvertReqToReceiptTwo(req ReqProcessReceipt) (Receipt, error) {
 	}
 
 	for _, item := range req.Items {
-		price, err := strconv.ParseInt(item.Price, 10, 64)
+		price, err := strconv.ParseFloat(item.Price, 64)
 		if err != nil {
 			return Receipt{}, fmt.Errorf("error parsing item price: %w", err)
 		}
 
 		receipt.Items = append(receipt.Items, Item{
 			ShortDescription: item.ShortDescription,
-			PriceCents:       price * 100,
+			Price:            price,
 		})
 	}
 

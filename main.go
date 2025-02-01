@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
+import "log"
 
 func main() {
-	fmt.Println("Hello, World!")
+	api := NewAPI()
+	if err := api.Run(); err != nil {
+		log.Fatal(err)
+	}
 }
