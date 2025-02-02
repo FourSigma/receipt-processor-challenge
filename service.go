@@ -65,7 +65,7 @@ var (
 
 var (
 	ErrRetailerEmpty               = errors.New("retailer cannot be empty")
-	ErrRetailerAlphanumeric        = errors.New("retailer must be alphanumeric")
+	ErrRetailerInvalid             = errors.New("retailer must be alphanumeric")
 	ErrPurchaseDateEmpty           = errors.New("purchase date cannot be empty")
 	ErrPurchaseDateInvalid         = errors.New("purchase date must be in the format of YYYY-MM-DD")
 	ErrPurchaseTimeEmpty           = errors.New("purchase time cannot be empty")
@@ -87,7 +87,7 @@ func (r ReqProcessReceipt) IsValid() error {
 	}
 
 	if !reReceiptRetailer.MatchString(r.Retailer) {
-		err = errors.Join(err, ErrRetailerAlphanumeric)
+		err = errors.Join(err, ErrRetailerInvalid)
 	}
 
 	if r.PurchaseDate == "" {
@@ -208,19 +208,32 @@ func (s Service) ProcessReceipt(req ReqProcessReceipt) (*RespProcessReceipt, err
 	return &RespProcessReceipt{Id: receipt.Id}, nil
 }
 
+var (
+	ErrIdEmpty   = errors.New("id cannot be empty")
+	ErrIdInvalid = errors.New("id must must be a non-whitespace character")
+
+	reReceiptId = regexp.MustCompile("^\\S+$")
+)
+
 type ReqGetPoints struct {
 	Id string `json:"id"`
 }
 
-type RespGetPoints struct {
-	Points int64 `json:"points"`
+func (r ReqGetPoints) IsValid() error {
+	var err error
+	if r.Id == "" {
+		err = errors.Join(err, ErrIdEmpty)
+	}
+
+	if !reReceiptId.MatchString(r.Id) {
+		err = errors.Join(err, ErrIdInvalid)
+	}
+
+	return err
 }
 
-func (r ReqGetPoints) IsValid() error {
-	if r.Id == "" {
-		return fmt.Errorf("id cannot be empty")
-	}
-	return nil
+type RespGetPoints struct {
+	Points int64 `json:"points"`
 }
 
 func (s Service) GetPoints(req ReqGetPoints) (*RespGetPoints, error) {

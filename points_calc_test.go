@@ -204,6 +204,3 @@ func MustParseTime(t *testing.T, s string) time.Time {
 
 	return parsed
 }
-
-func TestPointsCaculator(t *testing.T) {
-}
