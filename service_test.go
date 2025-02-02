@@ -5,30 +5,79 @@ import (
 	"testing"
 )
 
-func TestService(t *testing.T) {
-	service := NewService()
+func TestServiceProcessRecepit(t *testing.T) {
+	t.Run("ProcessRecepit: happy path", func(t *testing.T) {
+		service := NewService()
 
-	t.Run("ProcessRecepit: happy input validation path", func(t *testing.T) {
-		req := ReqProcessReceipt{
-			Retailer:     "Target",
-			PurchaseDate: "2021-01-02",
-			PurchaseTime: "11:00",
-			Total:        "100.23",
-			Items: []struct {
-				ShortDescription string `json:"shortDescription"`
-				Price            string `json:"price"`
-			}{
-				{ShortDescription: "Pepsi - 12-oz", Price: "1.25"},
-			},
-		}
+		t.Run("ProcessRecepit: Example 1 points calculation", func(t *testing.T) {
+			req := ReqProcessReceipt{
+				Retailer:     "M&M Corner Market",
+				PurchaseDate: "2022-03-20",
+				PurchaseTime: "14:33",
+				Total:        "9.00",
+				Items: []struct {
+					ShortDescription string `json:"shortDescription"`
+					Price            string `json:"price"`
+				}{
+					{ShortDescription: "Gatorade", Price: "2.25"},
+					{ShortDescription: "Gatorade", Price: "2.25"},
+					{ShortDescription: "Gatorade", Price: "2.25"},
+					{ShortDescription: "Gatorade", Price: "2.25"},
+				},
+			}
 
-		_, err := service.ProcessReceipt(req)
-		if err != nil {
-			t.Errorf("got %v, want nil", err)
-		}
+			resp, err := service.ProcessReceipt(req)
+			if err != nil {
+				t.Errorf("got %v, want nil", err)
+			}
+
+			respPoints, err := service.GetPoints(ReqGetPoints{Id: resp.Id})
+			if err != nil {
+				t.Errorf("got %v, want nil", err)
+			}
+
+			if respPoints.Points != 109 {
+				t.Errorf("got %v, want 109", respPoints.Points)
+			}
+		})
+
+		t.Run("ProcessRecepit: Example 2 points calculation", func(t *testing.T) {
+			req := ReqProcessReceipt{
+				Retailer:     "Target",
+				PurchaseDate: "2022-01-01",
+				PurchaseTime: "13:01",
+				Total:        "35.35",
+				Items: []struct {
+					ShortDescription string `json:"shortDescription"`
+					Price            string `json:"price"`
+				}{
+					{ShortDescription: "Mountain Dew 12PK", Price: "6.49"},
+					{ShortDescription: "Emils Cheese Pizza", Price: "12.25"},
+					{ShortDescription: "Knorr Creamy Chicken", Price: "1.26"},
+					{ShortDescription: "Doritos Nacho Cheese", Price: "3.35"},
+					{ShortDescription: "   Klarbrunn 12-PK 12 FL OZ  ", Price: "12.00"},
+				},
+			}
+
+			resp, err := service.ProcessReceipt(req)
+			if err != nil {
+				t.Errorf("got %v, want nil", err)
+			}
+
+			respPoints, err := service.GetPoints(ReqGetPoints{Id: resp.Id})
+			if err != nil {
+				t.Errorf("got %v, want nil", err)
+			}
+
+			if respPoints.Points != 28 {
+				t.Errorf("got %v, want 28", respPoints.Points)
+			}
+		})
 	})
 
 	t.Run("ProcessRecepit: sad input valdiation path", func(t *testing.T) {
+		service := NewService()
+
 		tests := []struct {
 			name    string
 			inputFn ReqProcessReceipt
@@ -128,6 +177,56 @@ func TestService(t *testing.T) {
 				if !errors.Is(err, ErrInvalidInput) {
 					t.Errorf("Error not wrapped with ErrrInvalidInput: %v", err)
 				}
+				if !errors.Is(err, tt.wantErr) {
+					t.Errorf("got %v, want %v", err, tt.wantErr)
+				}
+			})
+		}
+	})
+}
+
+func TestServiceGetPoints(t *testing.T) {
+	t.Run("GetPoints: happy validation path", func(t *testing.T) {
+		service := NewService()
+
+		service.store.StoreReceipt(Receipt{
+			Id: "c4c34d52-bd98-4b81-80e1-fd4939dbe7fb",
+		})
+
+		req := ReqGetPoints{Id: "c4c34d52-bd98-4b81-80e1-fd4939dbe7fb"}
+
+		_, err := service.GetPoints(req)
+		if err != nil {
+			t.Errorf("got %v, want nil", err)
+		}
+	})
+
+	t.Run("GetPoints: sad valdiation path", func(t *testing.T) {
+		service := NewService()
+		tests := []struct {
+			name    string
+			inputFn ReqGetPoints
+			wantErr error
+		}{
+			{
+				name:    "Validation: should return error if Id is empty",
+				inputFn: ReqGetPoints{},
+				wantErr: ErrIdEmpty,
+			},
+			{
+				name:    "Validation: should return error if Id is invalid",
+				inputFn: ReqGetPoints{Id: "#^#$&*^fjerkej dlfjdlfj"},
+				wantErr: ErrIdInvalid,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				_, err := service.GetPoints(tt.inputFn)
+				if !errors.Is(err, ErrInvalidInput) {
+					t.Errorf("Error not wrapped with ErrrInvalidInput: %v", err)
+				}
+
 				if !errors.Is(err, tt.wantErr) {
 					t.Errorf("got %v, want %v", err, tt.wantErr)
 				}

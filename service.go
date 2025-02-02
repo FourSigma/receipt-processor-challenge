@@ -16,11 +16,11 @@ type RecepitStore struct {
 	store map[string]Receipt
 }
 
-func (s *RecepitStore) StoreReceipt(id string, r Receipt) {
+func (s *RecepitStore) StoreReceipt(r Receipt) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.store[id] = r
+	s.store[r.Id] = r
 }
 
 func (s *RecepitStore) GetReceipt(id string) (Receipt, error) {
@@ -203,7 +203,7 @@ func (s Service) ProcessReceipt(req ReqProcessReceipt) (*RespProcessReceipt, err
 
 	receipt.Points = CalculatePoints(receipt, rules...)
 
-	s.store.StoreReceipt(receipt.Id, receipt)
+	s.store.StoreReceipt(receipt)
 
 	return &RespProcessReceipt{Id: receipt.Id}, nil
 }
@@ -238,7 +238,7 @@ type RespGetPoints struct {
 
 func (s Service) GetPoints(req ReqGetPoints) (*RespGetPoints, error) {
 	if err := req.IsValid(); err != nil {
-		return nil, fmt.Errorf("error validating request: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidInput, err)
 	}
 
 	r, err := s.store.GetReceipt(req.Id)

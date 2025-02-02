@@ -51,6 +51,12 @@ func TestRules(t *testing.T) {
 		{
 			handler: RuleMultipleOfQuarter,
 			name:    "RuleMultipleOfQuarter: should return 25",
+			input:   Receipt{Total: 34.50},
+			want:    25,
+		},
+		{
+			handler: RuleMultipleOfQuarter,
+			name:    "RuleMultipleOfQuarter: should return 25",
 			input:   Receipt{Total: 34.75},
 			want:    25,
 		},

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 )
@@ -32,13 +33,11 @@ func (a API) ProcessReceipt(rw http.ResponseWriter, r *http.Request) {
 
 	resp, err := a.svc.ProcessReceipt(body)
 	if err != nil {
-		log.Println(err)
+		EncodeJSONError(rw, err)
 		return
 	}
 
-	if err := EncodeJSON(rw, resp); err != nil {
-		return
-	}
+	EncodeJSON(rw, resp, http.StatusOK)
 
 	return
 }
@@ -54,9 +53,7 @@ func (a API) GetReceipt(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := EncodeJSON(rw, resp); err != nil {
-		return
-	}
+	EncodeJSON(rw, resp, http.StatusOK)
 
 	return
 }
@@ -66,7 +63,27 @@ func DecodeJSON(r *http.Request, val any) error {
 	return json.NewDecoder(r.Body).Decode(val)
 }
 
-func EncodeJSON(rw http.ResponseWriter, val any) error {
+func EncodeJSON(rw http.ResponseWriter, val any, code int) {
+	rw.WriteHeader(code)
 	rw.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(rw).Encode(val)
+	if err := json.NewEncoder(rw).Encode(val); err != nil {
+		log.Println(err)
+	}
+}
+
+func EncodeJSONError(rw http.ResponseWriter, err error) {
+	code := http.StatusInternalServerError
+	message := "internal server error"
+
+	switch {
+	case errors.Is(err, ErrInvalidInput):
+		code = http.StatusBadRequest
+		message = ErrInvalidInput.Error()
+
+	case errors.Is(err, ErrNotFound):
+		code = http.StatusNotFound
+		message = ErrNotFound.Error()
+	}
+
+	http.Error(rw, message, code)
 }

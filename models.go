@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ErrInvalidInput = errors.New("Please verify input.")
+	ErrInvalidInput = errors.New("The receipt is invalid.")
 	ErrNotFound     = errors.New("No receipt found for that ID.")
 )
 
