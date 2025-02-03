@@ -229,6 +229,11 @@ func (r ReqGetPoints) IsValid() error {
 
 	if !reReceiptId.MatchString(r.Id) {
 		err = errors.Join(err, ErrIdInvalid)
+	} else {
+		// Check for invalid UUID
+		if _, perr := uuid.Parse(r.Id); perr != nil {
+			err = errors.Join(perr, ErrIdInvalid)
+		}
 	}
 
 	return err
