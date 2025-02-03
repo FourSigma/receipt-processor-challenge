@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
@@ -183,7 +184,7 @@ type RespProcessReceipt struct {
 	Id string `json:"id"`
 }
 
-func (s Service) ProcessReceipt(req ReqProcessReceipt) (*RespProcessReceipt, error) {
+func (s Service) ProcessReceipt(ctx context.Context, req ReqProcessReceipt) (*RespProcessReceipt, error) {
 	if err := req.IsValid(); err != nil {
 		return nil, fmt.Errorf("invalid request - %w %w", models.ErrInvalidInput, err)
 	}
@@ -243,7 +244,7 @@ type RespGetPoints struct {
 	Points int64 `json:"points"`
 }
 
-func (s Service) GetPoints(req ReqGetPoints) (*RespGetPoints, error) {
+func (s Service) GetPoints(ctx context.Context, req ReqGetPoints) (*RespGetPoints, error) {
 	if err := req.IsValid(); err != nil {
 		return nil, fmt.Errorf("%w: %w", models.ErrInvalidInput, err)
 	}

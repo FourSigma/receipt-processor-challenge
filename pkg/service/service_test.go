@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -27,13 +28,14 @@ func TestServiceProcessRecepit(t *testing.T) {
 					{ShortDescription: "Gatorade", Price: "2.25"},
 				},
 			}
+			ctx := context.Background()
 
-			resp, err := service.ProcessReceipt(req)
+			resp, err := service.ProcessReceipt(ctx, req)
 			if err != nil {
 				t.Errorf("got %v, want nil", err)
 			}
 
-			respPoints, err := service.GetPoints(ReqGetPoints{Id: resp.Id})
+			respPoints, err := service.GetPoints(ctx, ReqGetPoints{Id: resp.Id})
 			if err != nil {
 				t.Errorf("got %v, want nil", err)
 			}
@@ -61,12 +63,13 @@ func TestServiceProcessRecepit(t *testing.T) {
 				},
 			}
 
-			resp, err := service.ProcessReceipt(req)
+			ctx := context.Background()
+			resp, err := service.ProcessReceipt(ctx, req)
 			if err != nil {
 				t.Errorf("got %v, want nil", err)
 			}
 
-			respPoints, err := service.GetPoints(ReqGetPoints{Id: resp.Id})
+			respPoints, err := service.GetPoints(ctx, ReqGetPoints{Id: resp.Id})
 			if err != nil {
 				t.Errorf("got %v, want nil", err)
 			}
@@ -175,7 +178,8 @@ func TestServiceProcessRecepit(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				_, err := service.ProcessReceipt(tt.inputFn)
+				ctx := context.Background()
+				_, err := service.ProcessReceipt(ctx, tt.inputFn)
 				if !errors.Is(err, models.ErrInvalidInput) {
 					t.Errorf("Error not wrapped with ErrrInvalidInput: %v", err)
 				}
@@ -197,7 +201,8 @@ func TestServiceGetPoints(t *testing.T) {
 
 		req := ReqGetPoints{Id: "c4c34d52-bd98-4b81-80e1-fd4939dbe7fb"}
 
-		_, err := service.GetPoints(req)
+		ctx := context.Background()
+		_, err := service.GetPoints(ctx, req)
 		if err != nil {
 			t.Errorf("got %v, want nil", err)
 		}
@@ -224,7 +229,8 @@ func TestServiceGetPoints(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				_, err := service.GetPoints(tt.inputFn)
+				ctx := context.Background()
+				_, err := service.GetPoints(ctx, tt.inputFn)
 				if !errors.Is(err, models.ErrInvalidInput) {
 					t.Errorf("Error not wrapped with ErrrInvalidInput: %v", err)
 				}

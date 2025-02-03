@@ -35,7 +35,7 @@ func (a API) ProcessReceipt(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := a.svc.ProcessReceipt(body)
+	resp, err := a.svc.ProcessReceipt(r.Context(), body)
 	if err != nil {
 		EncodeJSONError(rw, err)
 		return
@@ -49,7 +49,7 @@ func (a API) GetReceipt(rw http.ResponseWriter, r *http.Request) {
 		Id: r.PathValue("id"),
 	}
 
-	resp, err := a.svc.GetPoints(req)
+	resp, err := a.svc.GetPoints(r.Context(), req)
 	if err != nil {
 		EncodeJSONError(rw, err)
 		return
