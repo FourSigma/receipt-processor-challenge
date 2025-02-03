@@ -1,10 +1,15 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/FourSigma/receipt-processor-challenge/pkg/models"
 	"github.com/FourSigma/receipt-processor-challenge/pkg/service"
@@ -20,12 +25,43 @@ type API struct {
 	svc *service.Service
 }
 
-func (a API) Run() error {
-	http.HandleFunc("POST /receipts/process", a.ProcessReceipt)
-	http.HandleFunc("GET /receipts/{id}/points", a.GetReceipt)
+func (a API) Run() {
+	// Routes
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /receipts/process", a.ProcessReceipt)
+	mux.HandleFunc("GET /receipts/{id}/points", a.GetReceipt)
 
-	log.Println("Starting server on :8080")
-	return http.ListenAndServe(":8080", nil)
+	// Server setup and shutdown
+	server := &http.Server{
+		Addr:         ":8080",
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+	}
+
+	go func() {
+
+		log.Println("Starting server on :8080")
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Failed to start server on :8080 - %s", err)
+		}
+
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Starting to server shutdown...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Server shutdown error: %v", err)
+	}
+
+	log.Println("Server gracefully stopped...")
+
 }
 
 func (a API) ProcessReceipt(rw http.ResponseWriter, r *http.Request) {
