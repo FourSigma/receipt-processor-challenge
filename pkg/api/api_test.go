@@ -152,7 +152,7 @@ func TestAPISadPath(t *testing.T) {
 	t.Run("Invalid ID for GET /receipts/{id}/points", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/receipts/id/points", nil)
-		req.SetPathValue("id", "232ajdf- 2323 322-322")
+		req.SetPathValue("id", "232ajdf- 2323 322-322") // Invalid ID
 
 		api.GetReceipt(rec, req)
 		if rec.Code != 400 {
@@ -162,7 +162,7 @@ func TestAPISadPath(t *testing.T) {
 	t.Run("Not found ID for GET /receipts/{id}/points", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/receipts/id/points", nil)
-		req.SetPathValue("id", "7fb1377b-b223-49d9-a31a-5a02701dd310")
+		req.SetPathValue("id", "7fb1377b-b223-49d9-a31a-5a02701dd310") // Valid ID
 
 		api.GetReceipt(rec, req)
 		if rec.Code != 404 {

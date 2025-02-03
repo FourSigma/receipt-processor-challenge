@@ -1,3 +1,9 @@
+# Running the program 
+
+Run server: `go run cmd/server/main.go`
+
+Run tests:  `go test -v ./...`
+
 # Receipt Processor
 
 Build a webservice that fulfils the documented API. The API is described below. A formal definition is provided 
