@@ -245,7 +245,7 @@ func (s Service) GetPoints(req ReqGetPoints) (*RespGetPoints, error) {
 
 	r, err := s.store.GetReceipt(req.Id)
 	if err != nil {
-		return nil, fmt.Errorf("error getting recepit: %w", err)
+		return nil, fmt.Errorf("%w: %w", models.ErrNotFound, err)
 	}
 
 	resp := &RespGetPoints{

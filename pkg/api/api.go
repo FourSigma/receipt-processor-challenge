@@ -42,8 +42,6 @@ func (a API) ProcessReceipt(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	EncodeJSON(rw, resp, http.StatusOK)
-
-	return
 }
 
 func (a API) GetReceipt(rw http.ResponseWriter, r *http.Request) {
@@ -53,13 +51,11 @@ func (a API) GetReceipt(rw http.ResponseWriter, r *http.Request) {
 
 	resp, err := a.svc.GetPoints(req)
 	if err != nil {
-		log.Println(err)
+		EncodeJSONError(rw, err)
 		return
 	}
 
 	EncodeJSON(rw, resp, http.StatusOK)
-
-	return
 }
 
 func DecodeJSON(r *http.Request, val any) error {
