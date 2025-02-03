@@ -1,8 +1,37 @@
-# Running the program 
+# 🚀 Running the server 🚀 
+
+The server run on port `8080` by default. 
 
 Run server: `go run cmd/server/main.go`
 
 Run tests:  `go test -v ./...`
+
+Test with example payload: 
+```sh 
+
+$ curl localhost:8080/receipts/process -d '{                               
+  "retailer": "M&M Corner Market",
+  "purchaseDate": "2022-03-20",
+  "purchaseTime": "14:33",
+  "items": [
+    {
+      "shortDescription": "Gatorade",
+      "price": "2.25"
+    },{
+      "shortDescription": "Gatorade",
+      "price": "2.25"
+    },{
+      "shortDescription": "Gatorade",
+      "price": "2.25"
+    },{
+      "shortDescription": "Gatorade",
+      "price": "2.25"
+    }
+  ],
+  "total": "9.00"
+}'
+
+```
 
 # Receipt Processor
 
